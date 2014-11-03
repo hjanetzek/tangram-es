@@ -9,7 +9,11 @@
 #import <UIKit/UIKit.h>
 #import <GLKit/GLKit.h>
 #import "tangram.h"
+#import "Input/touchEvent.h"
+#import "Input/touchEventMgr.h"
 
 @interface ViewController : GLKViewController
 
 @end
+
+
