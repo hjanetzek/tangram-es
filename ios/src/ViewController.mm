@@ -103,8 +103,7 @@
 
 - (void)update
 {
-    applyGestures();
-    clearGestures();
+
 }
 
 - (void)glkView:(GLKView *)view drawInRect:(CGRect)rect

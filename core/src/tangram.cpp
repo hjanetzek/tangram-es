@@ -31,6 +31,7 @@ void renderFrame()
 {
 
     // TODO: Use dt from client application
+    applyGestures();
     sceneDirector->update(0.016);
 
     sceneDirector->renderFrame();
@@ -39,7 +40,6 @@ void renderFrame()
     if (glError) {
         logMsg("GL Error %d!!!\n", glError);
     }
-
 }
 
 void handleTouchEvents(const Tangram::TouchEvent& _touchEvent) {
@@ -54,10 +54,7 @@ void handleTouchEvents(const Tangram::TouchEvent& _touchEvent) {
 void applyGestures() {
     if(touchEventMgr->m_tapDetector.isTap()) {
         logMsg("new tap event detected. Yay!\n");
+        touchEventMgr->m_tapDetector.reset();
         //TODO: code to handle tapping
     }
-}
-
-void clearGestures() {
-    touchEventMgr->clearEvents();
 }
