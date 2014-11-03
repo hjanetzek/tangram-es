@@ -15,6 +15,7 @@
 
 - (void)setupGL;
 - (void)tearDownGL;
+- (void)onTouchEvent:(Tangram::TouchEvent::eventType)type withTouches:(NSSet*)touches withEvent:(UIEvent*)event;
 
 @end
 
@@ -64,6 +65,22 @@
     // Dispose of any resources that can be recreated.
 }
 
+- (void) touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
+    [self onTouchEvent:Tangram::TouchEvent::eventType::began withTouches:touches withEvent:event];
+}
+
+- (void) touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event {
+    [self onTouchEvent:Tangram::TouchEvent::eventType::moved withTouches:touches withEvent:event];
+}
+
+- (void) touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
+    [self onTouchEvent:Tangram::TouchEvent::eventType::ended withTouches:touches withEvent:event];
+}
+
+- (void) touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
+    [self onTouchEvent:Tangram::TouchEvent::eventType::cancelled withTouches:touches withEvent:event];
+}
+
 - (void)setupGL
 {
     [EAGLContext setCurrentContext:self.context];
@@ -85,12 +102,33 @@
 
 - (void)update
 {
-    
+    applyGestures();
+    clearGestures();
 }
 
 - (void)glkView:(GLKView *)view drawInRect:(CGRect)rect
 {
     renderFrame();
+}
+
+
+- (void) onTouchEvent:(Tangram::TouchEvent::eventType)type withTouches:(NSSet*)touches withEvent:(UIEvent*)event {
+    Tangram::TouchEvent newEvent;
+    newEvent.m_type = type;
+    newEvent.m_timePoint = std::chrono::high_resolution_clock::now();
+    NSEnumerator* enumerator = [[event allTouches] objectEnumerator];
+    UITouch* curTouch;
+    while ((curTouch = [enumerator nextObject])) {
+        if ((newEvent.m_numTouches + 1) < Tangram::TouchEvent::s_maxTouches) {
+            CGPoint pos = [curTouch locationInView:curTouch.view];
+            Tangram::TouchEvent::Point& curPoint = newEvent.m_points[newEvent.m_numTouches++];
+            curPoint.m_id = (std::uintptr_t) curTouch;
+            curPoint.m_pos.x = pos.x;
+            curPoint.m_pos.y = pos.y;
+            curPoint.m_isChanged = [touches containsObject:curTouch];
+        }
+    }
+    handleTouchEvents(newEvent);
 }
 
 @end
