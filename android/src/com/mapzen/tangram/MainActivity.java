@@ -28,11 +28,14 @@ public class MainActivity extends Activity
 		view = new GLSurfaceView(getApplication());
 		view.setEGLContextClientVersion(2);
         view.setEGLConfigChooser(8,8,8,8,16,0);
-		view.setRenderer(new TangramRenderer());
+        Tangram tangram = new Tangram();
+		view.setRenderer(tangram);
 		setContentView(view);
 
+        //Set the touchListener on the view
+        view.setOnTouchListener(tangram);
     }
-
+    
     @Override
 	protected void onPause() 
 	{
@@ -46,5 +49,5 @@ public class MainActivity extends Activity
 		super.onResume();
 		view.onResume();
 	}
-
 }
+
