@@ -61,5 +61,5 @@ namespace Tangram {
         glm::vec2 tapPosition() {return m_tapPosition;}
     };
 
-};
+}
 
