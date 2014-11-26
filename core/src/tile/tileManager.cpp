@@ -181,17 +181,23 @@ void TileManager::generateBufferTiles(TileID _origTileID) {
 
     // Load hierarchy tiles async
     for(const auto& hierarchyTileID : hierarchyTileIDs) {
-        auto bufferTileIncoming = std::async(std::launch::async, [&]() {
-            MapTile* newBuffTile = new MapTile(hierarchyTileID, m_view->getMapProjection());
-            for(const auto& source : m_dataSources) {
-                logMsg("Loading buffer tile: [%d, %d, %d] \tcorresponding to visible tile: [%d, %d, %d]\n", hierarchyTileID.z, hierarchyTileID.x, hierarchyTileID.y, _origTileID.z, _origTileID.x, _origTileID.y);
-                if( ! source->loadTileData(*newBuffTile)) {
-                    logMsg("ERROR: Loading failed for buffer tile [%d, %d, %d]\n", hierarchyTileID.z, hierarchyTileID.x, hierarchyTileID.y);
+        // Skip loading buffer tile if already loaded by another set of visible tile(s)
+        if(m_bufferedTileSet.find(hierarchyTileID) != m_bufferedTileSet.end()) {
+            continue;
+        }
+        else {
+            auto bufferTileIncoming = std::async(std::launch::async, [&]() {
+                MapTile* newBuffTile = new MapTile(hierarchyTileID, m_view->getMapProjection());
+                for(const auto& source : m_dataSources) {
+                    logMsg("Loading buffer tile: [%d, %d, %d] \tcorresponding to visible tile: [%d, %d, %d]\n", hierarchyTileID.z, hierarchyTileID.x, hierarchyTileID.y, _origTileID.z, _origTileID.x, _origTileID.y);
+                    if( ! source->loadTileData(*newBuffTile)) {
+                        logMsg("ERROR: Loading failed for buffer tile [%d, %d, %d]\n", hierarchyTileID.z, hierarchyTileID.x, hierarchyTileID.y);
+                    }
                 }
-            }
-            return newBuffTile;
-        });
-    m_incomingBuffTiles.push_back(std::move(bufferTileIncoming));
+                return newBuffTile;
+            });
+            m_incomingBuffTiles.push_back(std::move(bufferTileIncoming));
+        }
     }
 }
 
