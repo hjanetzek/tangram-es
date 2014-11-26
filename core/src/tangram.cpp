@@ -105,7 +105,7 @@ void render() {
         // Loop over visible tiles
         for (const auto& mapIDandTile : m_tileManager->getVisibleTiles()) {
 
-            const std::unique_ptr<MapTile>& tile = mapIDandTile.second;
+            const std::shared_ptr<MapTile>& tile = mapIDandTile.second;
             
             if (tile) {
                 // Draw!

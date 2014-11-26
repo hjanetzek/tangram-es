@@ -50,22 +50,43 @@ public:
     bool updateTileSet();
 
     /* Returns the set of currently visible tiles */
-    const std::map<TileID, std::unique_ptr<MapTile>>& getVisibleTiles() { return m_tileSet; }
+    const std::map<TileID, std::shared_ptr<MapTile>>& getVisibleTiles() { return m_tileSet; }
 
 private:
 
     TileManager();
 
+    std::mutex m_mutex;
     std::shared_ptr<View> m_view;
     std::shared_ptr<Scene> m_scene;
 
-    std::map<TileID, std::unique_ptr<MapTile>> m_tileSet;
+    std::map<TileID, std::shared_ptr<MapTile>> m_tileSet;
+    std::map<TileID, std::shared_ptr<MapTile>> m_bufferedTileSet;
 
     std::vector<std::unique_ptr<DataSource>> m_dataSources;
 
     std::vector< std::future<MapTile*> > m_incomingTiles;
+    std::vector< std::future<MapTile*> > m_incomingBuffTiles;
 
+    /*
+     * Start an async thread to add a new visible tile to m_tileSet
+     */
     void addTile(const TileID& _tileID);
-    void removeTile(std::map<TileID, std::unique_ptr<MapTile>>::iterator& _tileIter);
+
+    /*
+     * Adds a already buffered tile from m_bufferedTileSet to m_tileSet
+     * Also process the styles for this tile to construct its VboMesh(s)
+     */
+    void addBufferedTile(const TileID& _tileID);
+
+    /*
+     * Removed a previously visible tile from m_tileSet
+     */
+    void removeTile(std::map<TileID, std::shared_ptr<MapTile>>::iterator& _tileIter);
+
+    /*
+     * Starts async threads to gather tile data for the buffer tiles for a visible tile already loaded
+     */
+    void generateBufferTiles(TileID _tileID);
 
 };
