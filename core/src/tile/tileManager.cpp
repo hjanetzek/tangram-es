@@ -40,7 +40,13 @@ bool TileManager::updateTileSet() {
                 auto tile = tileFuture.get();
                 const auto& id = tile->getID();
                 logMsg("Visible Tile [%d, %d, %d] finished loading\n", id.z, id.x, id.y);
-                m_tileSet[id].reset(tile);
+                
+                // lock to write to m_tileSet
+                {
+                    std::lock_guard<std::mutex> lock(m_mutex);
+                    m_tileSet[id].reset(tile);
+                }
+                
                 tileSetChanged = true;
                 incomingTilesIter = m_incomingTiles.erase(incomingTilesIter);
                 // Visible tile loaded, construct async threads for its hierarchy tiles
@@ -97,14 +103,8 @@ bool TileManager::updateTileSet() {
             visTilesIter++;
             tileSetIter++;
         } else if (visTile < tileInSet) {
-            //check if visTile is already buffered, if yes then grab from there
-            if(m_bufferedTileSet.find(visTile) != m_bufferedTileSet.end()) {
-                addBufferedTile(visTile);
-            }
-            else {
-                // tileSet is missing an element present in visibleTiles
-                addTile(visTile);
-            }
+            // tileSet is missing an element present in visibleTiles
+            addTile(visTile);
             visTilesIter++;
             tileSetChanged = true;
         } else {
@@ -123,13 +123,7 @@ bool TileManager::updateTileSet() {
 
     while (visTilesIter != visibleTiles.end()) {
         // All tiles in visibleTiles that haven't been covered yet are not in tileSet, so add them
-        //check if visTile is already buffered, if yes then grab from there
-        if(m_bufferedTileSet.find(*visTilesIter) != m_bufferedTileSet.end()) {
-            addBufferedTile(*visTilesIter);
-        }
-        else {
-            addTile(*visTilesIter);
-        }
+        addTile(*visTilesIter);
         visTilesIter++;
         tileSetChanged = true;
     }
@@ -137,8 +131,37 @@ bool TileManager::updateTileSet() {
 }
 
 void TileManager::addTile(const TileID& _tileID) {
+    
+    //check if this tile is already buffered, if yes grab from buffer asyncly
+    if(m_bufferedTileSet.find(_tileID) != m_bufferedTileSet.end()) {
 
-    m_tileSet[_tileID].reset(); // Emplace a unique_ptr that is null until tile finishes loading
+        auto addBufferTileFut = std::async(std::launch::async, [&]() {
+            
+            // lock to write to m_tileSet
+            {
+                std::lock_guard<std::mutex> lock(m_mutex);
+                m_tileSet[_tileID] = m_bufferedTileSet[_tileID];
+            }
+            
+            for(const auto& source : m_dataSources) {
+                logMsg("Adding Buffered tile [%d, %d, %d] to visible tile set\n", _tileID.z, _tileID.x, _tileID.y);
+                
+                //Get already loaded tile data from the source
+                auto tileData = source->getTileData(_tileID);
+                for(auto& style : m_scene->getStyles()) {
+                    style->addData(*tileData, *(m_tileSet[_tileID]), m_view->getMapProjection());
+                }
+            }
+            
+        });
+        return;
+    }
+    
+    // lock to write to m_tileSet
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_tileSet[_tileID].reset(); // Emplace a unique_ptr that is null until tile finishes loading
+    }
 
     /*
      * Start a async thread to fetch this (_tileID) visible tile
@@ -165,19 +188,7 @@ void TileManager::generateBufferTiles(TileID _origTileID) {
 
     // Generate Hierarchy tileIDs
     std::vector<TileID> hierarchyTileIDs;
-    TileID parent(_origTileID.x >> 1, _origTileID.y >> 1, _origTileID.z - 1);
-    if(parent.x > 0 && parent.y > 0 && parent.z > 0) {
-        hierarchyTileIDs.push_back(parent);
-    }
-    if((_origTileID.z + 1) < m_view->s_maxZoom) {
-        for(int i = 0; i < 2; i++) {
-            int xVal = (_origTileID.x << 1) + i;
-            for(int j = 0; j < 2; j++) {
-                int yVal = (_origTileID.y << 1) + j;
-                hierarchyTileIDs.push_back(TileID(xVal, yVal, _origTileID.z+1));
-            }
-        }
-    }
+    _origTileID.getHierarchyTiles(hierarchyTileIDs, m_view->s_maxZoom);
 
     // Load hierarchy tiles async
     for(const auto& hierarchyTileID : hierarchyTileIDs) {
@@ -201,25 +212,14 @@ void TileManager::generateBufferTiles(TileID _origTileID) {
     }
 }
 
-void TileManager::addBufferedTile(const TileID& _tileID) {
-    m_tileSet[_tileID] = m_bufferedTileSet[_tileID];
-    for(const auto& source : m_dataSources) {
-        logMsg("Adding Buffered tile [%d, %d, %d] to visible tile set\n", _tileID.z, _tileID.x, _tileID.y);
-
-        // Get already loaded tile data from the source
-        auto tileData = source->getTileData(_tileID);
-
-        for(auto& style : m_scene->getStyles()) {
-            style->addData(*tileData, *(m_tileSet[_tileID]), m_view->getMapProjection());
-        }
-    }
-    
-}
-
 void TileManager::removeTile(std::map< TileID, std::shared_ptr<MapTile> >::iterator& _tileIter) {
     
     // Remove tile from tileSet and destruct tile
-    _tileIter = m_tileSet.erase(_tileIter);
+    // lock to write to m_tileSet
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        _tileIter = m_tileSet.erase(_tileIter);
+    }
 
     // TODO: if tile is being loaded, cancel loading; For now they continue to load
     // and will be culled the next time that updateTileSet is called
