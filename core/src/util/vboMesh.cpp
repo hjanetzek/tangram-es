@@ -1,6 +1,8 @@
 #include "vboMesh.h"
 #include "platform.h"
 
+#include <chrono>
+
 #define MAX_INDEX_VALUE 65535 // Maximum value of GLushort
 
 int VboMesh::s_validGeneration = 0;
@@ -73,11 +75,11 @@ void VboMesh::addVertices(GLbyte* _vertices, int _nVertices) {
     }
     
     // Only add up to 65535 vertices, any more will overflow our 16-bit indices
-    int indexSpace = MAX_INDEX_VALUE - m_nVertices;
+    /*int indexSpace = MAX_INDEX_VALUE - m_nVertices;
     if (_nVertices > indexSpace) {
         _nVertices = indexSpace;
         logMsg("WARNING: Tried to add more vertices than available in index space\n");
-    }
+    }*/
 
     int vertexBytes = m_vertexLayout->getStride() * _nVertices;
     m_vertexData.insert(m_vertexData.end(), _vertices, _vertices + vertexBytes);
@@ -98,10 +100,10 @@ void VboMesh::addIndices(GLushort* _indices, int _nIndices) {
         return;
     }
     
-    if (m_nVertices >= MAX_INDEX_VALUE) {
+    /*if (m_nVertices >= MAX_INDEX_VALUE) {
         logMsg("WARNING: Vertex buffer full, not adding indices\n");
         return;
-    }
+    }*/
 
     m_indices.insert(m_indices.end(), _indices, _indices + _nIndices);
     m_nIndices += _nIndices;
@@ -145,8 +147,15 @@ void VboMesh::upload() {
 
 }
 
-void VboMesh::draw(const std::shared_ptr<ShaderProgram> _shader) {
+long int numVBOdraw = 0;
+long int drawTimeCount = 0;
+double avgTime = 0;
 
+void VboMesh::draw(const std::shared_ptr<ShaderProgram> _shader) {
+    //++numVBOdraw;
+
+    //auto startTime = std::chrono::high_resolution_clock::now();
+    
     checkValidity();
     
     // Ensure that geometry is buffered into GPU
@@ -175,7 +184,15 @@ void VboMesh::draw(const std::shared_ptr<ShaderProgram> _shader) {
     } else if (m_nVertices > 0) {
         glDrawArrays(m_drawMode, 0, m_nVertices);
     }
-
+    
+    //auto endTime = std::chrono::high_resolution_clock::now();
+    
+    //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+    //drawTimeCount += duration;
+    //avgTime = (double)drawTimeCount/(double)numVBOdraw;
+    //logMsg("Time for this VboMesh::draw call: %f\n", (double)duration);
+    //logMsg("\t\t\tAvg time for VboMesh::draw call: %f\n\n", avgTime);
+    
 }
 
 void VboMesh::checkValidity() {

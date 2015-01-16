@@ -14,6 +14,21 @@
 #include "scene/scene.h"
 #include "util/error.h"
 
+#include <ctime>
+#include <chrono>
+
+unsigned long int numFrames = 0;
+long long int timeCount = 0;
+double avgRenderTimePerFrame = 0;
+
+unsigned long int numTiles = 0;
+long long int tileTimeCount = 0;
+double avgRenderTimePerTile = 0;
+
+unsigned long int numStyles = 0;
+long long int styleTimeCount = 0;
+double avgRenderTimePerStyle = 0;
+
 namespace Tangram {
 
 std::unique_ptr<TileManager> m_tileManager;
@@ -99,7 +114,7 @@ void resize(int _newWidth, int _newHeight) {
 }
 
 void update(float _dt) {
-
+    
     if (m_view) {
         m_view->update();
     }
@@ -113,28 +128,50 @@ void update(float _dt) {
 void render() {
 
     // Set up openGL for new frame
+    
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glm::dmat4 viewProj = m_view->getViewProjectionMatrix();
+    
 
     // Loop over all styles
+    
+    //++numFrames;
+    //auto startTime = std::chrono::high_resolution_clock::now();
     for (const auto& style : m_scene->getStyles()) {
+        
+        //++numStyles;
+        //auto startStyleTime = std::chrono::high_resolution_clock::now();
 
         style->setup();
-
         // Loop over visible tiles
         for (const auto& mapIDandTile : m_tileManager->getVisibleTiles()) {
-
+            //++numTiles;
+            //auto startTileTime = std::chrono::high_resolution_clock::now();
             const std::unique_ptr<MapTile>& tile = mapIDandTile.second;
-            
             if (tile) {
                 // Draw!
                 tile->draw(*style, viewProj);
             }
-
+            //auto endTileTime = std::chrono::high_resolution_clock::now();
+            //tileTimeCount = tileTimeCount + std::chrono::duration_cast<std::chrono::microseconds>(endTileTime - startTileTime).count();
+            //avgRenderTimePerTile = (double)tileTimeCount/(double)numTiles;
+            //logMsg("Render time for this tile: %d microseconds\n", std::chrono::duration_cast<std::chrono::microseconds>(endTileTime - startTileTime).count());
+            //logMsg("\t\t\tAverage render time per tile: %f microseconds\n\n", avgRenderTimePerTile);
         }
+        //auto endStyleTime = std::chrono::high_resolution_clock::now();
+        //styleTimeCount = styleTimeCount + std::chrono::duration_cast<std::chrono::microseconds>(endStyleTime - startStyleTime).count();
+        //avgRenderTimePerStyle = (double)styleTimeCount/(double)numStyles;
+        //logMsg("Render time for this style: %d microseconds\n", std::chrono::duration_cast<std::chrono::microseconds>(endStyleTime - startStyleTime).count());
+        //logMsg("\t\t\tAverage render time per style: %f microseconds\n\n", avgRenderTimePerStyle);
     }
-
+    
+    //auto endTime = std::chrono::high_resolution_clock::now();
+    //timeCount = timeCount + std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+    //avgRenderTimePerFrame = (double)timeCount/(double)numFrames;
+    //logMsg("Render time for this frame: %d microseconds\n", std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count());
+    //logMsg("\t\t\tAverage Render Time Per Frame: %f microseconds\n", avgRenderTimePerFrame);
+    
     while (Error::hadGlError("Tangram::render()")) {}
 
 }
@@ -154,13 +191,11 @@ void handleTapGesture(float _posX, float _posY) {
 
     // Flip y displacement to change from screen coordinates to world coordinates
     m_view->translate(dx, -dy);
-    logMsg("Tap: (%f,%f)\n", _posX, _posY);
 
 }
 
 void handleDoubleTapGesture(float _posX, float _posY) {
     
-    logMsg("Double tap: (%f,%f)\n", _posX, _posY);
 
 }
 
@@ -173,13 +208,11 @@ void handlePanGesture(float _dX, float _dY) {
     // of the intended "world movement", but dy gets flipped once more because screen
     // coordinates have y pointing down and our world coordinates have y pointing up
     m_view->translate(-dx, dy);
-    logMsg("Drag: (%f,%f)\n", _dX, _dY);
 
 }
 
 void handlePinchGesture(float _posX, float _posY, float _scale) {
     
-    logMsg("Pinch: (%f, %f)\tscale: (%f)\n", _posX, _posY, _scale);
     m_view->zoom( _scale < 1.0 ? -1 : 1);
 
 }
