@@ -60,9 +60,14 @@ void Builders::buildPolygon(const Polygon& _polygon, std::vector<glm::vec3>& _po
         const float* tessVertices = tessGetVertices(tesselator);
         _pointsOut.reserve(_pointsOut.size() + numVertices); // Pre-allocate vertex vector
         _normalOut.reserve(_normalOut.size() + numVertices); // Pre-allocate normal vector
+        //_pointsOut.reserve(_pointsOut.size() + numElements);
+        //_normalOut.reserve(_normalOut.size() + numElements);
         if (useTexCoords) {
             _texcoordOut.reserve(_texcoordOut.size() + numVertices); // Pre-allocate texcoord vector
         }
+        /*if (useTexCoords) {
+            _texcoordOut.reserve(_texcoordOut.size() + numElements);
+        }*/
         for(int i = 0; i < numVertices; i++) {
             if (useTexCoords) {
                 float u = mapValue(tessVertices[3*i], bBox.getMinX(), bBox.getMaxX(), 0., 1.);
@@ -72,6 +77,19 @@ void Builders::buildPolygon(const Polygon& _polygon, std::vector<glm::vec3>& _po
             _pointsOut.push_back(glm::vec3(tessVertices[3*i], tessVertices[3*i+1], tessVertices[3*i+2]));
             _normalOut.push_back(normal);
         }
+        /*for(int i = 0; i < numElements; i++) {
+            const TESSindex* tessElement = &tessElements[i*3];
+            for(int j = 0; j < 3; j++) {
+                ushort vertexIndex = (ushort)tessElement[j];
+                if(useTexCoords) {
+                    float u = mapValue(tessVertices[vertexIndex], bBox.getMinX(), bBox.getMaxX(), 0., 1.);
+                    float v = mapValue(tessVertices[vertexIndex+1], bBox.getMinY(), bBox.getMaxY(), 0., 1.);
+                    _texcoordOut.push_back(glm::vec2(u, v));
+                }
+                _pointsOut.push_back(glm::vec3(tessVertices[vertexIndex*3], tessVertices[vertexIndex*3+1], tessVertices[vertexIndex*3+2]));
+                _normalOut.push_back((normal));
+            }
+        }*/
     }
     else {
         logMsg("Tesselator cannot tesselate!!\n");
@@ -143,6 +161,31 @@ void Builders::buildPolygonExtrusion(const Polygon& _polygon, const float& _minH
             }
             
             vertexDataOffset += 4;
+            /*// 0
+            _pointsOut.push_back(line[i]);
+            _normalOut.push_back(normalVector);
+            // 1
+            _pointsOut.push_back(line[i+1]);
+            _normalOut.push_back(normalVector);
+            // 2
+            _pointsOut.push_back(glm::vec3(line[i].x, line[i].y, _minHeight));
+            _normalOut.push_back(normalVector);
+            // 1
+            _pointsOut.push_back(line[i+1]);
+            _normalOut.push_back(normalVector);
+            // 3
+            _pointsOut.push_back(glm::vec3(line[i+1].x, line[i+1].y, _minHeight));
+            _normalOut.push_back(normalVector);
+            // 2
+            _pointsOut.push_back(glm::vec3(line[i].x, line[i].y, _minHeight));
+            _normalOut.push_back(normalVector);
+            
+            if(useTexCoords) {
+                _texcoordOut.push_back(glm::vec2(1.,0.));
+                _texcoordOut.push_back(glm::vec2(0.,0.));
+                _texcoordOut.push_back(glm::vec2(1.,1.));
+                _texcoordOut.push_back(glm::vec2(0.,1.));
+            }*/
             
         }
     }
@@ -151,6 +194,10 @@ void Builders::buildPolygonExtrusion(const Polygon& _polygon, const float& _minH
 void buildGeneralPolyLine(const Line& _line, float _halfWidth, std::vector<glm::vec3>& _pointsOut, std::vector<glm::vec2>& _scalingVecsOut, std::vector<Builders::ushort>& _indicesOut, std::vector<glm::vec2>& _texCoordOut) {
 
     using Builders::ushort;
+    
+    std::vector<glm::vec3> tempPoints;
+    std::vector<glm::vec2> tempTex;
+    std::vector<glm::vec2> tempScalingVec;
     
     size_t lineSize = _line.size();
     
@@ -171,6 +218,16 @@ void buildGeneralPolyLine(const Line& _line, float _halfWidth, std::vector<glm::
     if (useScalingVecs) {
         _scalingVecsOut.reserve(_scalingVecsOut.size() + lineSize * 2); // Pre-allocate scalingvec vector
     }
+    /*_pointsOut.reserve(_pointsOut.size() + (lineSize - 1) * 6);
+    tempPoints.reserve( (lineSize - 1) * 6);
+    if(useTexCoords) {
+        _texCoordOut.reserve(_texCoordOut.size() + (lineSize - 1) * 6);
+        tempTex.reserve((lineSize - 1) * 6);
+    }
+    if(useScalingVecs) {
+        _scalingVecsOut.reserve(_scalingVecsOut.size() + (lineSize - 1) * 6);
+        tempScalingVec.reserve((lineSize - 1) * 6);
+    }*/
     
     glm::vec2 normPrevCurr; // Right normal to segment between previous and current m_points
     glm::vec2 normCurrNext; // Right normal to segment between current and next m_points
@@ -247,10 +304,71 @@ void buildGeneralPolyLine(const Line& _line, float _halfWidth, std::vector<glm::
         _pointsOut.push_back(glm::vec3(currCoord.x - rightNorm.x * _halfWidth, currCoord.y - rightNorm.y * _halfWidth, currCoord.z));
     }
     
-    if (useTexCoords) {
-        _texCoordOut.push_back(glm::vec2(1.0,1.0));
-        _texCoordOut.push_back(glm::vec2(0.0,1.0));
+    /*if (useScalingVecs) {
+        tempPoints.push_back(currCoord);
+        tempPoints.push_back(currCoord);
+        tempScalingVec.push_back(rightNorm);
+        tempScalingVec.push_back(-rightNorm);
+    } else {
+        tempPoints.push_back(glm::vec3(currCoord.x + rightNorm.x * _halfWidth, currCoord.y + rightNorm.y * _halfWidth, currCoord.z));
+        tempPoints.push_back(glm::vec3(currCoord.x - rightNorm.x * _halfWidth, currCoord.y - rightNorm.y * _halfWidth, currCoord.z));
     }
+    
+    if (useTexCoords) {
+        tempTex.push_back(glm::vec2(1.0,0.0));
+        tempTex.push_back(glm::vec2(0.0,0.0));
+    }
+    
+    // Loop over intermediate points in the polyline
+    for (size_t i = 1; i < lineSize - 1; i++) {
+        prevCoord = currCoord;
+        currCoord = nextCoord;
+        nextCoord = _line[i+1];
+        
+        normPrevCurr = normCurrNext;
+        
+        normCurrNext.x = nextCoord.y - currCoord.y;
+        normCurrNext.y = currCoord.x - nextCoord.x;
+        
+        rightNorm = normPrevCurr + normCurrNext;
+        rightNorm = glm::normalize(rightNorm);
+        float scale = sqrtf(2. / (1. + glm::dot(normPrevCurr,normCurrNext) ));
+        rightNorm *= scale;
+        
+        if (useScalingVecs) {
+            tempPoints.push_back(currCoord);
+            tempPoints.push_back(currCoord);
+            tempScalingVec.push_back(rightNorm);
+            tempScalingVec.push_back(-rightNorm);
+        } else {
+            tempPoints.push_back(glm::vec3(currCoord.x + rightNorm.x * _halfWidth, currCoord.y + rightNorm.y * _halfWidth, currCoord.z));
+            tempPoints.push_back(glm::vec3(currCoord.x - rightNorm.x * _halfWidth, currCoord.y - rightNorm.y * _halfWidth, currCoord.z));
+        }
+        
+        if (useTexCoords) {
+            float frac = i/(float)lineSize;
+            tempTex.push_back(glm::vec2(1.0, frac));
+            tempTex.push_back(glm::vec2(0.0, frac));
+        }
+        
+    }
+    
+    normCurrNext = glm::normalize(normCurrNext);
+    
+    if (useScalingVecs) {
+        tempPoints.push_back(nextCoord);
+        tempPoints.push_back(nextCoord);
+        tempScalingVec.push_back(rightNorm);
+        tempScalingVec.push_back(-rightNorm);
+    } else {
+        tempPoints.push_back(glm::vec3(currCoord.x + rightNorm.x * _halfWidth, currCoord.y + rightNorm.y * _halfWidth, currCoord.z));
+        tempPoints.push_back(glm::vec3(currCoord.x - rightNorm.x * _halfWidth, currCoord.y - rightNorm.y * _halfWidth, currCoord.z));
+    }
+    
+    if (useTexCoords) {
+        tempTex.push_back(glm::vec2(1.0,1.0));
+        tempTex.push_back(glm::vec2(0.0,1.0));
+    }*/
     
     for (size_t i = 0; i < lineSize - 1; i++) {
         _indicesOut.push_back(vertexDataOffset + 2*i+2);
@@ -261,6 +379,32 @@ void buildGeneralPolyLine(const Line& _line, float _halfWidth, std::vector<glm::
         _indicesOut.push_back(vertexDataOffset + 2*i+3);
         _indicesOut.push_back(vertexDataOffset + 2*i+1);
     }
+    
+    /*for(size_t i = 0; i < lineSize - 1; i++) {
+        _pointsOut.push_back(tempPoints[2*i+2]);
+        _pointsOut.push_back(tempPoints[2*i+1]);
+        _pointsOut.push_back(tempPoints[2*i]);
+        
+        _pointsOut.push_back(tempPoints[2*i+2]);
+        _pointsOut.push_back(tempPoints[2*i+3]);
+        _pointsOut.push_back(tempPoints[2*i+1]);
+        
+        _texCoordOut.push_back(tempTex[2*i+2]);
+        _texCoordOut.push_back(tempTex[2*i+1]);
+        _texCoordOut.push_back(tempTex[2*i]);
+        
+        _texCoordOut.push_back(tempTex[2*i+2]);
+        _texCoordOut.push_back(tempTex[2*i+3]);
+        _texCoordOut.push_back(tempTex[2*i+1]);
+        
+        _scalingVecsOut.push_back(tempScalingVec[2*i+2]);
+        _scalingVecsOut.push_back(tempScalingVec[2*i+1]);
+        _scalingVecsOut.push_back(tempScalingVec[2*i]);
+        
+        _scalingVecsOut.push_back(tempScalingVec[2*i+2]);
+        _scalingVecsOut.push_back(tempScalingVec[2*i+3]);
+        _scalingVecsOut.push_back(tempScalingVec[2*i+1]);
+    }*/
     
 }
 
