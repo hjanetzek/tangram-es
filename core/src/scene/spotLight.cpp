@@ -61,11 +61,7 @@ std::string SpotLight::getInstanceAssignBlock() {
     if (!m_dynamic) {
 
         block += ", " + glm::to_string(m_position);
-        block += ", " + glm::to_string(m_direction);
-
-        block += ", " + std::to_string(m_spotCosCutoff);
-        block += ", " + std::to_string(m_spotExponent);
-
+        
         if (m_constantAttenuation!=0.0) {
             block += ", " + std::to_string(m_constantAttenuation);
         }
@@ -75,6 +71,12 @@ std::string SpotLight::getInstanceAssignBlock() {
         if (m_quadraticAttenuation!=0.0) {
             block += ", " + std::to_string(m_quadraticAttenuation);
         }
+
+        block += ", " + glm::to_string(m_direction);
+
+        block += ", " + std::to_string(m_spotCosCutoff);
+        block += ", " + std::to_string(m_spotExponent);
+
 
         block += ")";
     }
