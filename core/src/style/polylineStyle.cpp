@@ -116,3 +116,6 @@ void PolylineStyle::buildLine(Line& _line, std::string& _layer, Properties& _pro
 void PolylineStyle::buildPolygon(Polygon& _polygon, std::string& _layer, Properties& _props, VboMesh& _mesh) const {
     // No-op
 }
+void PolylineStyle::buildMesh(std::vector<uint32_t>& indices, std::vector<Point>&
+                              points, std::string& _layer, Properties& props, VboMesh& _mesh) const {
+}

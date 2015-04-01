@@ -148,3 +148,8 @@ void FontStyle::teardown() {
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
 }
+
+void FontStyle::buildMesh(std::vector<uint32_t>& indices, std::vector<Point>&
+                          points, std::string& _layer, Properties& props, VboMesh& _mesh) const {
+}
+

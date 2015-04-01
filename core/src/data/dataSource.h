@@ -44,6 +44,9 @@ public:
     /* Clears all data associated with this dataSource */
     void clearData();
 
+    virtual int minZoom() const { return 0; };
+    virtual int maxZoom() const { return 18; };
+
     DataSource() {}
     virtual ~DataSource() { m_tileStore.clear(); }
 };
