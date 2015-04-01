@@ -10,6 +10,7 @@
 #include "view/view.h"
 #include "data/geoJsonSource.h"
 #include "data/protobufSource.h"
+#include "data/oscimSource.h"
 
 #include "style/polygonStyle.h"
 #include "style/polylineStyle.h"
@@ -38,7 +39,7 @@ namespace Tangram {
             m_view = std::make_shared<View>();
             
             // Move the view to coordinates in Manhattan so we have something interesting to test
-            glm::dvec2 target = m_view->getMapProjection().LonLatToMeters(glm::dvec2(-74.00796, 40.70361));
+            glm::dvec2 target = m_view->getMapProjection().LonLatToMeters(glm::dvec2(8.80767, 53.07558));
             m_view->setPosition(target.x, target.y);
         }
 
@@ -89,7 +90,8 @@ namespace Tangram {
             // json tile source
             // std::unique_ptr<DataSource> dataSource(new GeoJsonTile());
             // protobuf tile source
-            std::unique_ptr<DataSource> dataSource(new ProtobufSource());
+            // std::unique_ptr<DataSource> dataSource(new ProtobufSource());
+            std::unique_ptr<DataSource> dataSource(new OpenScienceMapSource());
             m_tileManager->addDataSource(std::move(dataSource));
         }
 
