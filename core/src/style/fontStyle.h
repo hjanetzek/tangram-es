@@ -14,6 +14,7 @@ protected:
     virtual void buildPoint(Point& _point, std::string& _layer, Properties& _props, VboMesh& _mesh) const override;
     virtual void buildLine(Line& _line, std::string& _layer, Properties& _props, VboMesh& _mesh) const override;
     virtual void buildPolygon(Polygon& _polygon, std::string& _layer, Properties& _props, VboMesh& _mesh) const override;
+    virtual void buildMesh(std::vector<uint32_t>& _indices, std::vector<Point>& _points, std::string& _layer, Properties& _props, VboMesh& _mesh) const override;
     virtual void prepareDataProcessing(MapTile& _tile) const override;
     virtual void finishDataProcessing(MapTile& _tile) const override;
 
@@ -32,7 +33,7 @@ public:
      * nullptr if no tile is being processed
      */
     static MapTile* processedTile;
-    
+
 private:
 
     std::string m_fontName;

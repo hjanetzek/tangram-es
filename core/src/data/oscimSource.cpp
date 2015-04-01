@@ -1,6 +1,5 @@
 #include <algorithm>
 
-#include "pbfParser.h"
 #include "platform.h"
 #include "tileID.h"
 
@@ -11,10 +10,11 @@
 #include "oscimSource.h"
 #include "oscimTags.h"
 
-OpenScienceMapSource::OpenScienceMapSource() {
-#ifndef TESTING
-    m_urlTemplate = "http://opensciencemap.org/tiles/vtm/[z]/[x]/[y].vtm";
-#endif
+OpenScienceMapSource::OpenScienceMapSource(int zmin, int zmax, bool s3db)
+    : zmin(zmin), zmax(zmax), s3db(s3db) {
+    m_urlTemplate = s3db
+                        ? "http://opensciencemap.org/tiles/s3db/[z]/[x]/[y].vtm"
+                        : "http://opensciencemap.org/tiles/vtm/[z]/[x]/[y].vtm";
 }
 
 #define VERSION 1
@@ -32,6 +32,7 @@ OpenScienceMapSource::OpenScienceMapSource() {
 #define ELEM_LINES 21
 #define ELEM_POLY 22
 #define ELEM_POINT 23
+#define ELEM_MESH 24
 
 #define ELEM_NUM_INDICES 1
 #define ELEM_NUM_TAGS 2
@@ -43,11 +44,31 @@ OpenScienceMapSource::OpenScienceMapSource() {
 const static int32_t tileExtent = 4096;
 const static double invTileExtent = 1.0 / 4096.0;
 
-struct TagId {
-    uint32_t key;
-    uint32_t val;
-    TagId(uint32_t key, uint32_t val) : key(key), val(val) {}
-};
+static double EARTH_CIRCUMFERENCE = 40075016.686;
+
+static std::vector<Point> parsePoints3D(protobuf::message& it,
+                                        float heightScale) {
+    std::vector<Point> points;
+    int32_t x = 0, y = 0, z = 0, cur = 0;
+
+    while (it.getData() < it.getEnd()) {
+        int32_t s = it.svarint();
+
+        if (cur == 0) {
+            x = x + s;
+        } else if (cur == 1) {
+            y = y + s;
+        } else {
+            z = z + s;
+
+            points.emplace_back(invTileExtent * (double)(2 * x - tileExtent),
+                                invTileExtent * (double)(tileExtent - 2 * y),
+                                z / 10.0 / heightScale);
+        }
+        cur = (cur + 1) % 3;
+    }
+    return points;
+}
 
 static std::vector<Point> parsePoints(protobuf::message& it, size_t len,
                                       int32_t& lastX, int32_t& lastY) {
@@ -55,8 +76,7 @@ static std::vector<Point> parsePoints(protobuf::message& it, size_t len,
     points.reserve(len);
 
     uint32_t cnt = 0;
-    int32_t x = lastX;
-    int32_t y = lastY;
+    int32_t x = lastX, y = lastY;
 
     while (it.getData() < it.getEnd() && cnt < len * 2) {
         int32_t s = it.svarint();
@@ -153,11 +173,10 @@ static Feature* addFeature(TileData& tileData, const std::string& layerName) {
     return &layer.features.back();
 }
 
-static bool extractFeature(protobuf::message it, GeometryType geomType,
-                           const std::vector<TagId>& tags,
-                           const std::vector<std::string>& keys,
-                           const std::vector<std::string>& vals,
-                           TileData& tileData, const MapTile& _tile) {
+bool OpenScienceMapSource::extractFeature(
+    protobuf::message it, GeometryType geomType, const std::vector<TagId>& tags,
+    const std::vector<std::string>& keys, const std::vector<std::string>& vals,
+    TileData& tileData, const MapTile& _tile) {
     uint32_t numIndices = 1;
     uint32_t numTags = 1;
     std::vector<uint32_t> indices;
@@ -167,7 +186,11 @@ static bool extractFeature(protobuf::message it, GeometryType geomType,
     Feature* feature = nullptr;
 
     bool take = true;
-
+    float lat = (2.0 * atan(exp((_tile.getOrigin().y / R_EARTH))) - PI * 0.5) *
+                180 / M_PI;
+    float heightScale = cos(lat * (PI / 180)) * EARTH_CIRCUMFERENCE /
+      ((1 << _tile.getID().z) * 2);
+    
     while (it.next()) {
         if (!take) {
             it.skip();
@@ -181,7 +204,7 @@ static bool extractFeature(protobuf::message it, GeometryType geomType,
 
             case ELEM_NUM_TAGS:
                 numTags = it.int64();
-                tagIds.reserve(std::min(numTags * 2, (uint32_t)100));
+                tagIds.reserve(numTags);
                 break;
 
             case ELEM_TAGS: {
@@ -209,8 +232,12 @@ static bool extractFeature(protobuf::message it, GeometryType geomType,
                                                                "minor_road");
                         break;
                     }
-                    if (k == "building") {
-                        feature = addFeature(tileData, "buildings");
+                    if (k == "building" || k == "roof") {
+                        if (s3db)
+                            feature = addFeature(tileData, "s3db");
+                        else
+                            feature = addFeature(tileData, "buildings");
+
                         feature->props.stringProps.emplace("kind", v);
                         break;
                     }
@@ -221,7 +248,6 @@ static bool extractFeature(protobuf::message it, GeometryType geomType,
                         break;
                     }
                 }
-
                 if (feature) {
                     for (auto i : tagIds) {
                         TagId t = tags[i];
@@ -244,7 +270,7 @@ static bool extractFeature(protobuf::message it, GeometryType geomType,
             }
 
             case ELEM_INDICES:
-                indices.reserve(std::min(numIndices, (uint32_t)100));
+                indices.reserve(numIndices);
                 readUintArray(it.getMessage(), indices);
                 break;
 
@@ -267,7 +293,15 @@ static bool extractFeature(protobuf::message it, GeometryType geomType,
                 else if (geomType == POINTS) {
                     int numPts = indices.empty() ? 1 : indices[0];
                     feature->points = parsePoints(geom, numPts, lastX, lastY);
+                } else if (geomType == TRIANGLES) {
+                    feature->points = parsePoints3D(geom, heightScale);
+                    // feature->triangles = std::vector<Triangle>();
+                    // int *tris =  reinterpret_cast<int*>(indices.data());
+
+                    feature->indices.insert(feature->indices.begin(),
+                                            indices.begin(), indices.end());
                 }
+
                 feature->geometryType = geomType;
 
                 break;
@@ -281,7 +315,7 @@ static bool extractFeature(protobuf::message it, GeometryType geomType,
         }
     }
 
-    if (take) {
+    if (take && !s3db) {
         feature = addFeature(tileData, "earth");
         feature->polygons.push_back(
             {{{-1, -1, 0}, {1, -1, 0}, {1, 1, 0}, {-1, 1, 0}}});
@@ -290,7 +324,8 @@ static bool extractFeature(protobuf::message it, GeometryType geomType,
     return take;
 }
 
-static void readTags(protobuf::message it, std::vector<TagId>& tags) {
+void OpenScienceMapSource::readTags(protobuf::message it,
+                                    std::vector<TagId>& tags) {
     while (it.getData() < it.getEnd()) {
         uint32_t key = it.varint();
         uint32_t val = it.varint();
@@ -310,6 +345,8 @@ std::shared_ptr<TileData> OpenScienceMapSource::parse(const MapTile& _tile,
     double timeStart = getTime();
 
     std::shared_ptr<TileData> tileData = std::make_shared<TileData>();
+    // if (_tile.getID().z > zmax || _tile.getID().z < zmin)
+    //   return tileData;
 
     std::string buffer(std::istreambuf_iterator<char>(_in.rdbuf()),
                        (std::istreambuf_iterator<char>()));
@@ -342,17 +379,17 @@ std::shared_ptr<TileData> OpenScienceMapSource::parse(const MapTile& _tile,
 
             case NUM_TAGS:
                 numTags = item.int64();
-                tags.reserve(std::min(numTags, (uint32_t)100));
+                tags.reserve(numTags);
                 break;
 
             case NUM_KEYS:
                 numKeys = item.int64();
-                keys.reserve(std::min(numKeys, (uint32_t)100));
+                keys.reserve(numKeys);
                 break;
 
             case NUM_VALS:
                 numVals = item.int64();
-                vals.reserve(std::min(numVals, (uint32_t)100));
+                vals.reserve(numVals);
                 break;
 
             case KEYS:
@@ -373,6 +410,8 @@ std::shared_ptr<TileData> OpenScienceMapSource::parse(const MapTile& _tile,
                 if (item.tag == ELEM_POLY) geomType = POLYGONS;
             case ELEM_POINT:
                 if (item.tag == ELEM_POINT) geomType = POINTS;
+            case ELEM_MESH:
+                if (item.tag == ELEM_MESH) geomType = TRIANGLES;
 
                 extractFeature(item.getMessage(), geomType, tags, keys, vals,
                                *tileData, _tile);

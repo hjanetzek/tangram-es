@@ -29,6 +29,8 @@ protected:
     virtual void buildPoint(Point& _point, std::string& _layer, Properties& _props, VboMesh& _mesh) const override;
     virtual void buildLine(Line& _line, std::string& _layer, Properties& _props, VboMesh& _mesh) const override;
     virtual void buildPolygon(Polygon& _polygon, std::string& _layer, Properties& _props, VboMesh& _mesh) const override;
+    virtual void buildMesh(std::vector<uint32_t>& _indices, std::vector<Point>& _points, std::string& _layer, Properties& _props, VboMesh& _mesh) const override;
+
     
 public:
     

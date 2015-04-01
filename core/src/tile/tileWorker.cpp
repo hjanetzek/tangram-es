@@ -36,6 +36,9 @@ void TileWorker::load(const TileID &_tile,
         // Fetch tile data from data sources
         logMsg("Loading Tile [%d, %d, %d]\n", _id.z, _id.x, _id.y);
         for (const auto& dataSource : _dataSources) {
+            if (_id.z > dataSource->maxZoom() || _id.z < dataSource->minZoom())
+              continue;
+
             if (m_aborted) {
                 m_finished = true;
                 return std::move(tile); // Early return
@@ -60,6 +63,7 @@ void TileWorker::load(const TileID &_tile,
             }
         }
         
+        logMsg("Finished Tile [%d, %d, %d]\n", _id.z, _id.x, _id.y);
         m_finished = true;
         
         // Return finished tile

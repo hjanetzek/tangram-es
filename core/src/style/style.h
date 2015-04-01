@@ -69,6 +69,8 @@ protected:
      */
     virtual void buildPolygon(Polygon& _polygon, std::string& _layer, Properties& _props, VboMesh& _mesh) const = 0;
 
+    virtual void buildMesh(std::vector<uint32_t>& _triangles, std::vector<Point>& _points, std::string& _layer, Properties& _props, VboMesh& _mesh) const = 0;
+
     /* Can be used by the style to prepare the data processing */
     virtual void prepareDataProcessing(MapTile& _tile) const;
 
