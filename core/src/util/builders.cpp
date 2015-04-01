@@ -112,9 +112,10 @@ void Builders::buildPolygonExtrusion(const Polygon& _polygon, const float& _minH
             _out.texcoords.reserve(_out.texcoords.size() + lineSize * 4); // Pre-allocate texcoord vector
         }
         
-        for (size_t i = 0; i < lineSize - 1; i++) {
-            
-            normalVector = glm::cross(upVector, (line[i+1] - line[i]));
+
+        for (size_t i = lineSize - 1, j = 0; j < lineSize; i = j, j++) {
+
+            normalVector = glm::cross(upVector, (line[j] - line[i]));
             normalVector = glm::normalize(normalVector);
             
             // 1st vertex top
@@ -122,7 +123,7 @@ void Builders::buildPolygonExtrusion(const Polygon& _polygon, const float& _minH
             _out.normals.push_back(normalVector);
             
             // 2nd vertex top
-            _out.points.push_back(line[i+1]);
+            _out.points.push_back(line[j]);
             _out.normals.push_back(normalVector);
             
             // 1st vertex bottom
@@ -130,7 +131,7 @@ void Builders::buildPolygonExtrusion(const Polygon& _polygon, const float& _minH
             _out.normals.push_back(normalVector);
             
             // 2nd vertex bottom
-            _out.points.push_back(glm::vec3(line[i+1].x, line[i+1].y, _minHeight));
+            _out.points.push_back(glm::vec3(line[j].x, line[j].y, _minHeight));
             _out.normals.push_back(normalVector);
             
             //Start the index from the previous state of the vertex Data

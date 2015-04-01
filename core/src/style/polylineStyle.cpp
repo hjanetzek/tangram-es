@@ -73,6 +73,7 @@ void PolylineStyle::buildLine(Line& _line, std::string& _layer, Properties& _pro
     PolyLineOptions lineOptions = { CapTypes::ROUND, JoinTypes::MITER, halfWidth };
     Builders::buildPolyLine(_line, lineOptions, lineOutput);
     
+    vertices.reserve(points.size() * 2);
     /*
      * Populate polyline vertices
      */

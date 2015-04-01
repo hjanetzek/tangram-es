@@ -53,6 +53,9 @@ public:
     
     /* Returns the set of currently visible tiles */
     const std::map<TileID, std::shared_ptr<MapTile>>& getVisibleTiles() { return m_tileSet; }
+
+    const static size_t MAX_WORKERS = 4;
+
     
 private:
 
@@ -66,7 +69,6 @@ private:
     
     std::vector<std::unique_ptr<DataSource>> m_dataSources;
 
-    const static size_t MAX_WORKERS = 4;
     std::list<std::unique_ptr<TileWorker> > m_workers;
     
     std::list<TileID> m_queuedTiles;

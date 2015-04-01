@@ -6,6 +6,7 @@
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
 #include <cstdarg>
+#include <ctime>
 
 static AAssetManager* assetManager;
 
@@ -83,6 +84,12 @@ unsigned char* bytesFromResource(const char* _path, unsigned int* _size) {
     AAsset_close(asset);
 
     return data;
+}
+
+double getTime() {
+    struct timespec tp;
+    clock_gettime(CLOCK_REALTIME, &tp);
+    return (double)tp.tv_sec + tp.tv_nsec * (double)1e-9;
 }
 
 #endif

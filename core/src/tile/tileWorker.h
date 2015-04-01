@@ -36,5 +36,6 @@ private:
     bool m_aborted;
     bool m_finished;
     
+    int m_id;
     std::future< std::shared_ptr<MapTile> > m_future;
 };
