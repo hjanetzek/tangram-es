@@ -5,11 +5,14 @@
 
 #include <chrono>
 
+static int _worker_serial = 0;
+
 TileWorker::TileWorker() {
     m_tileID.reset(new TileID(NOT_A_TILE));
     m_free = true;
     m_aborted = false;
     m_finished = false;
+    m_id = _worker_serial++;
 }
 
 void TileWorker::abort() {
@@ -37,7 +40,7 @@ void TileWorker::load(const TileID &_tile,
                 m_finished = true;
                 return std::move(tile); // Early return
             }
-            if (! dataSource->loadTileData(*tile)) {
+            if (! dataSource->loadTileData(this->m_id, *tile)) {
                 logMsg("ERROR: Loading failed for tile [%d, %d, %d]\n", _id.z, _id.x, _id.y);
                 continue;
             }

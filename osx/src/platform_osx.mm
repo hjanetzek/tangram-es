@@ -5,6 +5,7 @@
 #import <cstdio>
 #import <cstdarg>
 #import <fstream>
+#include <ctime>
 
 #include "platform.h"
 
@@ -61,6 +62,12 @@ unsigned char* bytesFromResource(const char* _path, unsigned int* _size) {
     resource.close();
 
     return reinterpret_cast<unsigned char *>(cdata);
+}
+
+double getTime() {
+    struct timespec tp;
+    clock_gettime(CLOCK_REALTIME, &tp);
+    return (double)tp.tv_sec + tp.tv_nsec * (double)1e-9;
 }
 
 #endif //PLATFORM_OSX

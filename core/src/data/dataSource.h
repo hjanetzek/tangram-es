@@ -5,10 +5,13 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <curl/curl.h>
+#include <vector>
 
 struct TileData;
 struct TileID;
 class MapTile;
+class TileWorker;
 
 class DataSource {
 
@@ -30,7 +33,7 @@ public:
      * then stores it to be accessed via <GetTileData>. This method SHALL NOT be called
      * from the main thread. 
      */
-    virtual bool loadTileData(const MapTile& _tile) = 0;
+    virtual bool loadTileData(int workerId, const MapTile& _tile) = 0;
 
     /* Returns the data corresponding to a <TileID> */
     virtual std::shared_ptr<TileData> getTileData(const TileID& _tileID);
@@ -56,6 +59,7 @@ protected:
      * the x index, y index, and zoom level of tiles to produce their URL
      */
     std::string m_urlTemplate;
+    std::vector<CURL*> m_curlHandles;
 
     /* Constructs the URL of a tile using <m_urlTemplate> */
     virtual std::unique_ptr<std::string> constructURL(const TileID& _tileCoord);
@@ -65,7 +69,7 @@ public:
     NetworkDataSource();
     virtual ~NetworkDataSource();
 
-    virtual bool loadTileData(const MapTile& _tile) override;
+    virtual bool loadTileData(int workerId, const MapTile& _tile) override;
 
 };
 
