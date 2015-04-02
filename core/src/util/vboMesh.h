@@ -90,11 +90,16 @@ private:
     
     std::shared_ptr<VertexLayout> m_vertexLayout;
     
-    std::vector<GLbyte> m_vertexData; // Raw interleaved vertex data in the format specified by the vertex layout
+
+    std::vector<std::pair<GLubyte*, int>> m_newVertices;
+
+    std::vector<GLubyte> m_vertexData; // Raw interleaved vertex data in the format specified by the vertex layout
     int m_nVertices;
     GLuint m_glVertexBuffer;
 
     std::vector<GLushort> m_indices;
+    std::vector<std::pair<GLushort*, int>> m_newIndices;
+
     int m_nIndices;
     GLuint m_glIndexBuffer;
 
