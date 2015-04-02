@@ -1,6 +1,7 @@
 #include "polygonStyle.h"
 #include "util/builders.h"
 #include "roadLayers.h"
+#include <cstring>
 
 PolygonStyle::PolygonStyle(std::string _name, GLenum _drawMode) : Style(_name, _drawMode) {
     m_material.setEmissionEnabled(false);
@@ -57,15 +58,9 @@ void PolygonStyle::buildLine(Line& _line, std::string& _layer, Properties& _prop
         glm::vec2 u = texcoords[i];
         vertices.push_back({ p.x, p.y, p.z, n.x, n.y, n.z, u.x, u.y, abgr });
     }
-    
-    // Make sure indices get correctly offset
-    int vertOffset = _mesh.numVertices();
-    for (auto& ind : indices) {
-        ind += vertOffset;
-    }
-    
-    _mesh.addVertices((GLbyte*)vertices.data(), (int)vertices.size());
-    _mesh.addIndices(indices.data(), (int)indices.size());
+
+    auto& mesh = static_cast<PolygonStyle::Mesh&>(_mesh);
+    mesh.addVertices(std::move(vertices),std::move(indices));
 }
 
 void PolygonStyle::buildPolygon(Polygon& _polygon, std::string& _layer, Properties& _props, VboMesh& _mesh) const {
@@ -137,14 +132,8 @@ void PolygonStyle::buildPolygon(Polygon& _polygon, std::string& _layer, Properti
     }
     */
     
-    // Make sure indices get correctly offset
-    int vertOffset = _mesh.numVertices();
-    for (auto& ind : indices) {
-        ind += vertOffset;
-    }
-    
-    _mesh.addVertices((GLbyte*)vertices.data(), (int)vertices.size());
-    _mesh.addIndices(indices.data(), (int)indices.size());
+     auto& mesh = static_cast<PolygonStyle::Mesh&>(_mesh);
+     mesh.addVertices(std::move(vertices),std::move(indices));
 }
 
 // struct Key {
@@ -209,20 +198,16 @@ void PolygonStyle::buildMesh(std::vector<uint32_t>& indices,
         auto b = p3 - p1;
 
         auto c = glm::cross(a, b);
-        auto n = glm::vec3(0,0,1) - glm::normalize(c);
+        auto n = glm::normalize(glm::vec3(0,0,0.25)) - glm::normalize(c);
+        //auto n =  glm::normalize(c);
 
         addVertex(p1, n, abgr, layer, newIndices, vertices);
         addVertex(p3, n, abgr, layer, newIndices, vertices);
         addVertex(p2, n, abgr, layer, newIndices, vertices);
     }
 
-    int vertOffset = _mesh.numVertices();
-    for (auto& ind : newIndices) {
-        ind += vertOffset;
-    }
-
-    _mesh.addVertices((GLbyte*)vertices.data(), (int)vertices.size());
-    _mesh.addIndices(newIndices.data(), (int)newIndices.size());
+    auto& mesh = static_cast<PolygonStyle::Mesh&>(_mesh);
+    mesh.addVertices(std::move(vertices), std::move(newIndices));
 
     // for (size_t i = 0; i < points.size(); i++) {
     //     glm::vec3 p = points[i];
