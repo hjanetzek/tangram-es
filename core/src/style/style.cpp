@@ -56,7 +56,9 @@ void Style::addData(TileData& _data, MapTile& _tile, const MapProjection& _mapPr
             }
         }
     }
-    
+    // HACK to allow more than one dataSource, when they dont use the same layers
+    // maybe styles should be owned by the dataSource
+    if (mesh->numVertices() > 0)
     _tile.addGeometry(*this, std::unique_ptr<VboMesh>(mesh));
 
     finishDataProcessing(_tile);
