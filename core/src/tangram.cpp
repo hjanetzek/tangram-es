@@ -39,7 +39,8 @@ namespace Tangram {
             m_view = std::make_shared<View>();
             
             // Move the view to coordinates in Manhattan so we have something interesting to test
-            glm::dvec2 target = m_view->getMapProjection().LonLatToMeters(glm::dvec2(8.80767, 53.07558));
+            //glm::dvec2 target = m_view->getMapProjection().LonLatToMeters(glm::dvec2(8.80767, 53.07558));
+            glm::dvec2 target = m_view->getMapProjection().LonLatToMeters(glm::dvec2(-74.00796, 40.70361));
             m_view->setPosition(target.x, target.y);
         }
 
@@ -50,12 +51,19 @@ namespace Tangram {
             // Load style(s); hard-coded for now
             std::unique_ptr<Style> polyStyle(new PolygonStyle("Polygon"));
             polyStyle->addLayers({
-                "buildings",
+                //"buildings",
                 "water",
                 "earth",
                 "landuse"
             });
             m_scene->addStyle(std::move(polyStyle));
+
+            std::unique_ptr<Style> s3dbStyle(new PolygonStyle("Buildings"));
+            s3dbStyle->addLayers({
+                "s3db"
+            });
+            m_scene->addStyle(std::move(s3dbStyle));
+
             
             std::unique_ptr<Style> linesStyle(new PolylineStyle("Polyline"));
             linesStyle->addLayers({"roads"});
@@ -85,13 +93,17 @@ namespace Tangram {
             // Pass references to the view and scene into the tile manager
             m_tileManager->setView(m_view);
             m_tileManager->setScene(m_scene);
-            
-            // Add a tile data source
-            // json tile source
+
+            // Add a tile data source json tile source
             // std::unique_ptr<DataSource> dataSource(new GeoJsonTile());
+
             // protobuf tile source
-            // std::unique_ptr<DataSource> dataSource(new ProtobufSource());
-            std::unique_ptr<DataSource> dataSource(new OpenScienceMapSource());
+            //std::unique_ptr<DataSource> dataSource(new ProtobufSource());
+
+            std::unique_ptr<DataSource> s3dbSource(new OpenScienceMapSource(16,16,true));
+            m_tileManager->addDataSource(std::move(s3dbSource));
+
+            std::unique_ptr<DataSource> dataSource(new OpenScienceMapSource(1,17,false));
             m_tileManager->addDataSource(std::move(dataSource));
         }
 
