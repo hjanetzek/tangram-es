@@ -266,6 +266,8 @@ void View::updateTiles() {
     float y = tileY * tileSize;
     
     int maxTileIndex = pow(2, m_zoom);
+
+    m_centerTile = glm::vec3((tileX + maxTileIndex) / 2, (tileY + maxTileIndex) / 2, m_zoom);
     
     while (x < tileRightEdge && tileX < maxTileIndex) {
         
@@ -284,5 +286,4 @@ void View::updateTiles() {
         tileX++;
         x += tileSize;
     }
-
 }

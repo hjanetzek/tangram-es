@@ -73,8 +73,10 @@ public:
     /* Gets the current zoom */
     float getZoom() const { return m_zoom; }
 
-	/* Get the current m_zoomIn */
-	bool isZoomIn() const { return m_isZoomIn; }
+    glm::vec3 getCenterTile() const { return m_centerTile; }
+
+    /* Get the current m_zoomIn */
+    bool isZoomIn() const { return m_isZoomIn; }
     
     /* Get the current roll angle in radians */
     float getRoll() const { return m_roll; }
@@ -154,6 +156,8 @@ protected:
 
     bool m_dirty;
     bool m_changed;
-    
+
+    glm::vec3 m_centerTile;
+
 };
 

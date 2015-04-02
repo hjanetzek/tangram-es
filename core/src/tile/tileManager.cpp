@@ -5,6 +5,7 @@
 
 #include <chrono>
 #include <algorithm>
+#include <glm/gtx/norm.hpp>
 
 TileManager::TileManager() {
     
@@ -117,6 +118,11 @@ bool TileManager::updateTileSet() {
     // Dispatch workers for queued tiles
     {
         auto workersIter = m_workers.begin();
+        glm::dvec2 center(m_view->getPosition().x, m_view->getPosition().y);
+        m_queuedTiles.sort([center,this](const TileID& a, const TileID& b){
+            return glm::length2(m_view->getMapProjection().TileCenter(a) - center) <
+          glm::length2(m_view->getMapProjection().TileCenter(b) - center);
+          });
         auto queuedTilesIter = m_queuedTiles.begin();
         
         while (workersIter != m_workers.end() && queuedTilesIter != m_queuedTiles.end()) {
