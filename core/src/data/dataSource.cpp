@@ -1,5 +1,3 @@
-#include <curl/curl.h>
-
 #include "geoJson.h"
 #include "dataSource.h"
 #include "platform.h"
@@ -37,6 +35,7 @@ void DataSource::clearData() {
 
 //---- NetworkDataSource Implementation----
 
+#if 0 
 //write_data call back from CURLOPT_WRITEFUNCTION
 //responsible to read and fill "stream" with the data.
 static size_t write_data(void *_ptr, size_t _size, size_t _nmemb, void *_stream) {
@@ -53,6 +52,12 @@ NetworkDataSource::~NetworkDataSource() {
     for (auto curlHandle : m_curlHandles) curl_easy_cleanup(curlHandle);
 
     curl_global_cleanup();
+#else
+NetworkDataSource::NetworkDataSource() {
+}
+
+NetworkDataSource::~NetworkDataSource() {
+#endif
 }
 
 std::unique_ptr<std::string> NetworkDataSource::constructURL(const TileID& _tileCoord) {
@@ -85,7 +90,10 @@ bool NetworkDataSource::loadTileData(int workerId, const MapTile& _tile) {
     }
 
     std::unique_ptr<std::string> url = constructURL(_tile.getID());
+    
+    std::stringstream rawData;
 
+#if 0
     CURL* curlHandle = m_curlHandles[workerId];
 
     if (!curlHandle) {
@@ -144,12 +152,22 @@ bool NetworkDataSource::loadTileData(int workerId, const MapTile& _tile) {
         // parse fetched data
         std::shared_ptr<TileData> tileData = parse(_tile, out);
 
+#else
+    success = fetchData(std::move(url), rawData);
+
+    if(rawData) {
+
+        // parse fetched data
+        std::shared_ptr<TileData> tileData = parse(_tile, rawData);
+        
+#endif
         // Lock our mutex so that we can safely write to the tile store
         {
             std::lock_guard<std::mutex> lock(m_mutex);
             m_tileStore[_tile.getID()] = tileData;
         }
 
+#if 0
     }
 
     //curl_slist_free_all(requestHeaders);
@@ -160,3 +178,12 @@ bool NetworkDataSource::loadTileData(int workerId, const MapTile& _tile) {
 }
 
 //---- MapzenVectorTileJson Implementation----
+#else
+    } else {
+        success = false;
+    }
+    
+    
+    return success;
+}
+#endif
