@@ -1,5 +1,6 @@
 #include "vboMesh.h"
 #include "platform.h"
+#include <cstring>
 
 #define MAX_INDEX_VALUE 65535 // Maximum value of GLushort
 
@@ -15,7 +16,6 @@ VboMesh::VboMesh(std::shared_ptr<VertexLayout> _vertexLayout, GLenum _drawMode) 
     m_isUploaded = false;
 
     setDrawMode(_drawMode);
-    
 }
 
 VboMesh::VboMesh() {
@@ -25,17 +25,20 @@ VboMesh::VboMesh() {
     m_nIndices = 0;
 
     m_isUploaded = false;
-    
 }
 
 VboMesh::~VboMesh() {
+    if (m_glVertexBuffer) glDeleteBuffers(1, &m_glVertexBuffer);
+    if (m_glIndexBuffer) glDeleteBuffers(1, &m_glIndexBuffer);
 
-    glDeleteBuffers(1, &m_glVertexBuffer);
-    glDeleteBuffers(1, &m_glIndexBuffer);
-    
     m_vertexData.clear();
     m_indices.clear();
 
+    for (auto p : m_newVertices)
+      delete[] p.first;
+
+    for (auto p : m_newIndices)
+      delete[] p.first;
 }
 
 void VboMesh::setVertexLayout(std::shared_ptr<VertexLayout> _vertexLayout) {
@@ -89,9 +92,11 @@ void VboMesh::addVertices(GLbyte* _vertices, int _nVertices) {
     }
 
     int vertexBytes = m_vertexLayout->getStride() * _nVertices;
-    m_vertexData.insert(m_vertexData.end(), _vertices, _vertices + vertexBytes);
-    m_nVertices += _nVertices;
+    auto vertices = new GLubyte[vertexBytes];
+    std::memcpy(vertices, _vertices, vertexBytes);
 
+    m_newVertices.emplace_back(vertices, vertexBytes);
+    m_nVertices += _nVertices;
 }
 
 int VboMesh::numVertices() const {
@@ -122,9 +127,11 @@ void VboMesh::addIndices(int* _indices, int _nIndices) {
         return;
     }
 
-    m_indices.insert(m_indices.end(), _indices, _indices + _nIndices);
-    m_nIndices += _nIndices;
+    auto indices = new GLushort[_nIndices];
+    for (int i = 0; i < _nIndices; i++) indices[i] = _indices[i];
 
+    m_newIndices.emplace_back(indices, _nIndices);
+    m_nIndices += _nIndices;
 }
 
 int VboMesh::numIndices() const {
@@ -135,27 +142,46 @@ int VboMesh::numIndices() const {
 }
 
 void VboMesh::upload() {
-    
     if (m_nVertices > 0) {
         // Generate vertex buffer, if needed
-        if (m_glVertexBuffer == 0) {
-            glGenBuffers(1, &m_glVertexBuffer);
+        if (m_glVertexBuffer == 0) glGenBuffers(1, &m_glVertexBuffer);
+
+        int vertexBytes = m_vertexLayout->getStride() * m_nVertices;
+
+        auto vertices = new GLubyte[vertexBytes];
+        int offset = 0;
+
+        for (auto p : m_newVertices) {
+            std::memcpy(vertices + offset, p.first, p.second);
+            offset += p.second;
+            delete[] p.first;
         }
-        
+        m_newVertices.clear();
+
         // Buffer vertex data
         glBindBuffer(GL_ARRAY_BUFFER, m_glVertexBuffer);
-        glBufferData(GL_ARRAY_BUFFER, m_vertexData.size(), m_vertexData.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertexBytes, vertices, GL_STATIC_DRAW);
+        delete[] vertices;
     }
 
     if (m_nIndices > 0) {
-        // Generate index buffer, if needed
-        if (m_glIndexBuffer == 0) {
-            glGenBuffers(1, &m_glIndexBuffer);
+        if (m_glIndexBuffer == 0) glGenBuffers(1, &m_glIndexBuffer);
+
+        auto indices = new GLushort[m_nIndices];
+
+        int offset = 0;
+        for (auto p : m_newIndices) {
+            std::memcpy(indices + offset, p.first, p.second * sizeof(GLushort));
+            offset += p.second;
+            delete[] p.first;
         }
+        m_newIndices.clear();
 
         // Buffer element index data
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_glIndexBuffer);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(GLushort), m_indices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_nIndices * sizeof(GLushort),
+                     indices, GL_STATIC_DRAW);
+        delete[] indices;
     }
 
     //m_vertexData.clear();
@@ -178,7 +204,8 @@ void VboMesh::upload() {
 void VboMesh::draw(const std::shared_ptr<ShaderProgram> _shader) {
 
     checkValidity();
-    
+    if (m_nVertices == 0 && m_nIndices == 0) return;
+
     // Ensure that geometry is buffered into GPU
     if (!m_isUploaded) {
         upload();
