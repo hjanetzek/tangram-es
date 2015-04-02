@@ -233,8 +233,11 @@ void View::updateTiles() {
      */
     
     m_visibleTiles.clear();
-    
-    float tileSize = 2 * MapProjection::HALF_CIRCUMFERENCE * pow(2, -(int)m_zoom);
+
+    // the hardcoded overzoom limit
+    auto zoom = fmin(m_zoom, 16);
+
+    float tileSize = 2 * MapProjection::HALF_CIRCUMFERENCE * pow(2, -(int)zoom);
     float invTileSize = 1.0 / tileSize;
     
     // Find bounds of view frustum in world space (i.e. project view frustum onto z = 0 plane)
@@ -265,15 +268,15 @@ void View::updateTiles() {
     float x = tileX * tileSize;
     float y = tileY * tileSize;
     
-    int maxTileIndex = pow(2, m_zoom);
+    int maxTileIndex = pow(2, zoom);
 
-    m_centerTile = glm::vec3((tileX + maxTileIndex) / 2, (tileY + maxTileIndex) / 2, m_zoom);
+    m_centerTile = glm::vec3((tileX + maxTileIndex) / 2, (tileY + maxTileIndex) / 2, zoom);
     
     while (x < tileRightEdge && tileX < maxTileIndex) {
         
         while (y < tileTopEdge && tileY < maxTileIndex) {
             
-            m_visibleTiles.insert(TileID(tileX, tileY, m_zoom));
+            m_visibleTiles.insert(TileID(tileX, tileY, zoom));
 
             tileY++;
             y += tileSize;

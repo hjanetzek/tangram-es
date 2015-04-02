@@ -121,7 +121,7 @@ public:
         m_visibleTiles.clear();
     }
     
-    constexpr static float s_maxZoom = 18.0;
+    constexpr static float s_maxZoom = 20.0;
 
 protected:
     
