@@ -105,6 +105,8 @@ public:
      *       z,w : max bounds in projection meters
      */
     virtual glm::dvec4 TileBounds(const TileID _tileCoord) const = 0;
+
+    virtual glm::dvec2 TileCenter(const TileID _tileCoord) const = 0;
     
     /* 
      * bounds of space in lon lat
@@ -147,6 +149,7 @@ public:
     virtual glm::ivec2 MetersToTileXY(const glm::dvec2 _meters, const int _zoom) const override;
     virtual glm::dvec2 PixelsToRaster(const glm::dvec2 _pix, const int _zoom) const override;
     virtual glm::dvec4 TileBounds(const TileID _tileCoord) const override;
+    virtual glm::dvec2 TileCenter(const TileID _tileCoord) const override;
     virtual glm::dvec4 TileLonLatBounds(const TileID _tileCoord) const override;
     virtual ~MercatorProjection() {}
 };

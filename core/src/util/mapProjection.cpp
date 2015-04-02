@@ -80,6 +80,10 @@ glm::dvec4 MercatorProjection::TileBounds(const TileID _tileCoord) const {
     return bounds;
 }
 
+glm::dvec2 MercatorProjection::TileCenter(const TileID _tileCoord) const {
+    return PixelsToMeters(glm::dvec2(_tileCoord.x*m_TileSize +m_TileSize*0.5, _tileCoord.y*m_TileSize+m_TileSize*0.5), _tileCoord.z);
+}
+
 glm::dvec4 MercatorProjection::TileLonLatBounds(const TileID _tileCoord) const {
     glm::dvec2 boundMin, boundMax;
     glm::dvec4 tileBounds, lonLatBounds;
