@@ -278,9 +278,6 @@ void View::updateTiles() {
     
     int maxTileIndex = 1 << int(zoom);
 
-    int X = (int) fmin(maxTileIndex - 1, tileRightEdge * invTileSize);
-    int Y = (int) fmin(maxTileIndex - 1, tileTopEdge * invTileSize);
-         
     while (x < tileRightEdge && tileX < maxTileIndex) {
         
         while (y < tileTopEdge && tileY < maxTileIndex) {

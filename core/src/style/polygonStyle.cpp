@@ -2,7 +2,6 @@
 #include "util/builders.h"
 #include "roadLayers.h"
 #include "tangram.h"
-#include <cstring>
 
 PolygonStyle::PolygonStyle(std::string _name, GLenum _drawMode) : Style(_name, _drawMode) {
     m_material.setEmissionEnabled(false);
@@ -141,41 +140,6 @@ void PolygonStyle::buildPolygon(Polygon& _polygon, std::string& _layer, Properti
      mesh.addVertices(std::move(vertices),std::move(indices));
 }
 
-// struct Key {
-//     glm::vec3 p, n;
-//     Key(glm::vec3 p, glm::vec3 n) : p(p), n(n) {}
-//     bool operator==(const Key& other) const {
-//         return (p == other.p && n == other.n);
-//     }
-// };
-
-// namespace std {
-//     template <>
-//     struct hash<Key> {
-//         std::size_t operator()(const Key& k) const {
-//           // needs some shifting >>
-//             return (std::hash<float>()(k.n.x) ^ std::hash<float>()(k.n.y) ^
-//                     std::hash<float>()(k.n.z) ^ std::hash<float>()(k.p.x) ^
-//                     std::hash<float>()(k.p.y) ^ std::hash<float>()(k.p.z));
-//         }
-//     };
-// }
-
-// static void addVertex(glm::vec3 p, glm::vec3 n, GLuint abgr, float layer,
-//                       std::unordered_map<Key, uint32_t>& vertexMap,
-//                       std::vector<uint32_t>& indices,
-//                       std::vector<PolygonStyle::PosNormColVertex>& vertices) {
-//     auto key = Key(p, n);
-//     // wont reuse id == 0 this way
-//     auto& id = vertexMap[key];
-//     if (!id) {
-//         logMsg("add id %d %f %f %f\n", id, p.x,p.y,p.z);
-//         id = vertices.size();
-//         vertices.push_back({p.x, p.y, p.z, n.x, n.y, n.z, 0, 0, abgr, layer});
-//     }
-//     indices.push_back(id);
-// }
-
 void PolygonStyle::addVertex(glm::vec3 p, glm::vec3 n, GLuint abgr, float layer,
                    std::vector<int>& indices,
                    std::vector<PosNormColVertex>& vertices) const {
@@ -213,15 +177,4 @@ void PolygonStyle::buildMesh(std::vector<uint32_t>& indices,
 
     auto& mesh = static_cast<PolygonStyle::Mesh&>(_mesh);
     mesh.addVertices(std::move(vertices), std::move(newIndices));
-
-    // for (size_t i = 0; i < points.size(); i++) {
-    //     glm::vec3 p = points[i];
-    //     glm::vec3 n(0);  // = normals[i];
-    //     glm::vec2 u(0);  // = texcoords[i];
-    //     vertices.push_back(
-    //         {p.x, p.y, p.z, n.x, n.y, n.z, u.x, u.y, abgr, layer});
-    // }
-
-    //_mesh.addVertices((GLbyte*)vertices.data(), (int)vertices.size());
-    //_mesh.addIndices(indices.data(), (int)indices.size());
 }

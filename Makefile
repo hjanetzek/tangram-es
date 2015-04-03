@@ -78,7 +78,7 @@ RPI_CMAKE_PARAMS = \
 	-DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_DIR}/raspberrypi.toolchain.cmake
 
 LINUX_CMAKE_PARAMS = \
-	-DPLATFORM_TARGET=linux
+	-DPLATFORM_TARGET=linux -DCMAKE_BUILD_TYPE=Debug
 
 clean: clean-android clean-osx clean-ios clean-rpi clean-tests clean-osx-xcode clean-linux
 
@@ -90,7 +90,7 @@ clean-android:
 
 clean-osx:
 	rm -rf ${OSX_BUILD_DIR}
-	
+
 clean-ios:
 	rm -rf ${IOS_BUILD_DIR}
 
@@ -152,7 +152,7 @@ endif
 rpi: cmake-rpi ${RPI_BUILD_DIR}
 	@cd ${RPI_BUILD_DIR} && \
 	${MAKE}
-	
+
 cmake-rpi:
 	@mkdir -p ${RPI_BUILD_DIR}
 	@cd ${RPI_BUILD_DIR} && \
@@ -160,13 +160,13 @@ cmake-rpi:
 
 linux: cmake-linux ${LINUX_BUILD_DIR}
 	cd ${LINUX_BUILD_DIR} && \
-	${MAKE}
+	${MAKE} -j4
 
 cmake-linux: 
 	mkdir -p ${LINUX_BUILD_DIR}
 	cd ${LINUX_BUILD_DIR} &&\
 	cmake ../.. ${LINUX_CMAKE_PARAMS}
-	
+
 tests: unit-tests
 
 unit-tests:

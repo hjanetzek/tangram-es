@@ -23,7 +23,7 @@ public:
      */
     VboMesh(std::shared_ptr<VertexLayout> _vertexlayout, GLenum _drawMode = GL_TRIANGLES);
     VboMesh();
-
+    
     /*
      * Set Vertex Layout for the vboMesh object
      */
@@ -58,15 +58,16 @@ public:
      * been uploaded it will be uploaded at this point
      */
     void draw(const std::shared_ptr<ShaderProgram> _shader);
-
+    
     static void addManagedVBO(VboMesh* _vbo);
-
+    
     static void removeManagedVBO(VboMesh* _vbo);
-
+    
     static void invalidateAllVBOs();
  protected:
 
-  typedef std::pair<GLubyte*,GLushort*> ByteBuffers;
+  // Compiled vertices + indices ready for upload
+  typedef std::pair<GLushort*, GLbyte*> ByteBuffers;
 
   virtual ByteBuffers compileVertexBuffer() = 0;
 
@@ -88,52 +89,51 @@ public:
     GLenum m_drawMode;
 
     bool m_isUploaded;
-
+    
     void checkValidity();
 
     template <typename T>
     ByteBuffers compile(std::vector<std::vector<T>> vertices,
                         std::vector<std::vector<int>> indices) {
-        int stride = m_vertexLayout->getStride();
 
-        GLubyte* vBuffer = new GLubyte[stride * m_nVertices];
+        int stride = m_vertexLayout->getStride();
+        GLbyte* vBuffer = new GLbyte[stride * m_nVertices];
         GLushort* iBuffer = new GLushort[m_nIndices];
 
-        int vOffset = 0;
-        int iOffset = 0;
-
-        int vertOffset = 0;
+        // shift indices by previous mesh vertices offset
+        int indiceOffset = 0;
         int sumVertices = 0;
+        int vPos = 0, iPos = 0;
 
         for (size_t i = 0; i < vertices.size(); i++) {
             auto verts = vertices[i];
             int nBytes = verts.size() * stride;
 
-            std::memcpy(vBuffer + vOffset, (GLbyte*)verts.data(), nBytes);
-            vOffset += nBytes;
+            std::memcpy(vBuffer + vPos, (GLbyte*)verts.data(), nBytes);
+            vPos += nBytes;
 
-            if (vertOffset + verts.size() > MAX_INDEX_VALUE) {
+            if (indiceOffset + verts.size() > MAX_INDEX_VALUE) {
                 logMsg("NOTICE: >>>>>> BIG MESH %d <<<<<<\n",
-                       vertOffset + verts.size());
-                m_vertexOffsets.emplace_back(iOffset, sumVertices);
-                vertOffset = 0;
+                       indiceOffset + verts.size());
+                m_vertexOffsets.emplace_back(iPos, sumVertices);
+                indiceOffset = 0;
             }
 
             auto ids = indices[i];
             int nElem = ids.size();
             for (int j = 0; j < nElem; j++) {
-                iBuffer[iOffset++] = ids[j] + vertOffset;
+                iBuffer[iPos++] = ids[j] + indiceOffset;
             }
 
             sumVertices += verts.size();
-            vertOffset += verts.size();
+            indiceOffset += verts.size();
 
             verts.clear();
             ids.clear();
         }
 
-        m_vertexOffsets.emplace_back(iOffset, sumVertices);
+        m_vertexOffsets.emplace_back(iPos, sumVertices);
 
-        return {vBuffer, iBuffer};
+        return { iBuffer, vBuffer };
     }
 };

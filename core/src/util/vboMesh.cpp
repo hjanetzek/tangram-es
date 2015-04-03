@@ -1,6 +1,5 @@
 #include "vboMesh.h"
 #include "platform.h"
-#include <cstring>
 
 #define MAX_INDEX_VALUE 65535 // Maximum value of GLushort
 
@@ -17,6 +16,7 @@ VboMesh::VboMesh(std::shared_ptr<VertexLayout> _vertexLayout, GLenum _drawMode)
     m_isUploaded = false;
 
     setDrawMode(_drawMode);
+    
 }
 
 VboMesh::VboMesh() {
@@ -26,6 +26,7 @@ VboMesh::VboMesh() {
     m_nIndices = 0;
 
     m_isUploaded = false;
+    
 }
 
 VboMesh::~VboMesh() {
@@ -58,9 +59,9 @@ void VboMesh::upload() {
     // Generate vertex buffer, if needed
     if (m_glVertexBuffer == 0) glGenBuffers(1, &m_glVertexBuffer);
 
-    GLubyte *vertices;
+    GLbyte *vertices;
     GLushort *indices;
-    std::tie (vertices, indices) = compileVertexBuffer();
+    std::tie (indices, vertices) = compileVertexBuffer();
 
     // Buffer vertex data
     int vertexBytes = m_vertexLayout->getStride() * m_nVertices;
@@ -85,10 +86,11 @@ void VboMesh::upload() {
     // to easily rebuild themselves after GL context loss. For optimizing memory usage (and for
     // other reasons) we'll want to change this in the future. This probably means going back to
     // data sources and styles to rebuild the vertex data.
-
+    
     m_generation = s_validGeneration;
 
     m_isUploaded = true;
+
 }
 
 void VboMesh::draw(const std::shared_ptr<ShaderProgram> _shader) {
@@ -147,11 +149,13 @@ void VboMesh::checkValidity() {
         m_isUploaded = false;
         m_glVertexBuffer = 0;
         m_glIndexBuffer = 0;
-
+        
         m_generation = s_validGeneration;
     }
 }
 
 void VboMesh::invalidateAllVBOs() {
+    
     ++s_validGeneration;
+    
 }
