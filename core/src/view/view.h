@@ -73,8 +73,6 @@ public:
     /* Gets the current zoom */
     float getZoom() const { return m_zoom; }
 
-    glm::vec3 getCenterTile() const { return m_centerTile; }
-
     /* Get the current m_zoomIn */
     bool isZoomIn() const { return m_isZoomIn; }
     
@@ -156,8 +154,5 @@ protected:
 
     bool m_dirty;
     bool m_changed;
-
-    glm::vec3 m_centerTile;
-
 };
 

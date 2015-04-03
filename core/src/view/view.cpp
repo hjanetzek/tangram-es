@@ -281,7 +281,6 @@ void View::updateTiles() {
     int X = (int) fmin(maxTileIndex - 1, tileRightEdge * invTileSize);
     int Y = (int) fmin(maxTileIndex - 1, tileTopEdge * invTileSize);
          
-    m_centerTile = glm::vec3((tileX + X) / 2, (tileY + Y) / 2, zoom);
     while (x < tileRightEdge && tileX < maxTileIndex) {
         
         while (y < tileTopEdge && tileY < maxTileIndex) {
