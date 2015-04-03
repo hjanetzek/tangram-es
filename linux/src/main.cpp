@@ -3,6 +3,7 @@
 #include "tangram.h"
 #include "platform.h"
 #include "gl.h"
+#include "platformCurl.h"
 
 // Input handling
 // ==============
@@ -132,7 +133,9 @@ int main(void) {
     glfwMakeContextCurrent(window);
 
     /* Do Curl Init */
-    curl_global_init(CURL_GLOBAL_DEFAULT);
+    //curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    platformInit();
     
     Tangram::initialize();
     Tangram::resize(width, height);
@@ -166,7 +169,10 @@ int main(void) {
     }
     
     Tangram::teardown();
-    curl_global_cleanup();
+
+    platformDispose();
+    //curl_global_cleanup();
+    
     glfwTerminate();
     return 0;
 }
