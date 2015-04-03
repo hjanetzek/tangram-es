@@ -121,15 +121,18 @@ public:
 
             if (useIndices) {
                 if (vertexOffset + nVertices > MAX_INDEX_VALUE) {
-                    logMsg("NOTICE: Big Mesh %d", vertexOffset + nVertices);
+                    logMsg("NOTICE: Big Mesh %d\n",
+                           vertexOffset + nVertices);
 
-                    m_vertexOffsets.emplace_back(iPos - indiceOffset, vertexOffset);
+                    m_vertexOffsets.emplace_back(indiceOffset, vertexOffset);
                     vertexOffset = 0;
-                    indiceOffset += iPos;
+                    indiceOffset = 0;
                 }
 
                 for (int idx : indices[i])
                     iBuffer[iPos++] = idx + vertexOffset;
+
+                indiceOffset += indices[i].size();
 
                 indices[i].clear();
             }
@@ -137,7 +140,7 @@ public:
             curVertices.clear();
         }
 
-        m_vertexOffsets.emplace_back(iPos - indiceOffset, vertexOffset);
+        m_vertexOffsets.emplace_back(indiceOffset, vertexOffset);
 
         return { iBuffer, vBuffer };
     }
