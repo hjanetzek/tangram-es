@@ -81,7 +81,11 @@ glm::dvec4 MercatorProjection::TileBounds(const TileID _tileCoord) const {
 }
 
 glm::dvec2 MercatorProjection::TileCenter(const TileID _tileCoord) const {
-    return PixelsToMeters(glm::dvec2(_tileCoord.x*m_TileSize +m_TileSize*0.5, _tileCoord.y*m_TileSize+m_TileSize*0.5), _tileCoord.z);
+    return PixelsToMeters(glm::dvec2(_tileCoord.x*m_TileSize +m_TileSize*0.5,
+                                     // dont ask me why - but this is opposite to
+                                     // map position
+                                     -(_tileCoord.y*m_TileSize+m_TileSize*0.5)),
+                          _tileCoord.z);
 }
 
 glm::dvec4 MercatorProjection::TileLonLatBounds(const TileID _tileCoord) const {

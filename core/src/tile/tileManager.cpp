@@ -125,10 +125,12 @@ bool TileManager::updateTileSet() {
     if (workersIter != m_workers.end()) {
 
           glm::dvec2 center(m_view->getPosition().x, m_view->getPosition().y);
-
+          //logMsg("pos %f, %f\n", center.x, center.y);
           m_queuedTiles.sort([center,this](const TileID& a, const TileID& b) {
-                return glm::length2(m_view->getMapProjection().TileCenter(a) - center) <
-                       glm::length2(m_view->getMapProjection().TileCenter(b) - center);
+              auto ca = m_view->getMapProjection().TileCenter(a);
+              auto cb = m_view->getMapProjection().TileCenter(b);
+              //logMsg("pos %f, %f - %f %f\n", ca.x, ca.y, cb.x, cb.y);
+              return glm::length2(ca - center) < glm::length2(cb - center);
          });
         
          auto queuedTilesIter = m_queuedTiles.begin();
