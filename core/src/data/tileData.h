@@ -54,7 +54,8 @@ enum GeometryType {
     UNKNOWN,
     POINTS,
     LINES,
-    POLYGONS
+    POLYGONS,
+    TRIANGLES,
 };
 
 typedef glm::vec3 Point;
@@ -77,7 +78,8 @@ struct Feature {
     std::vector<Point> points;
     std::vector<Line> lines;
     std::vector<Polygon> polygons;
-    
+    std::vector<uint32_t> indices;
+  
     Properties props;
     
 };

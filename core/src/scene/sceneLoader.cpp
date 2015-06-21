@@ -9,6 +9,7 @@
 #include "lights.h"
 #include "geoJsonSource.h"
 #include "mvtSource.h"
+#include "vtmSource.h"
 #include "polygonStyle.h"
 #include "polylineStyle.h"
 #include "debugStyle.h"
@@ -88,6 +89,10 @@ void SceneLoader::loadSources(Node sources, TileManager& tileManager) {
             // TODO
         } else if (type == "MVT") {
             sourcePtr = std::unique_ptr<DataSource>(new MVTSource(name, url));
+        } else if (type == "VTM") {
+            sourcePtr = std::unique_ptr<DataSource>(new VTMSource(0, 16, false, name, url));
+        } else if (type == "VTM3D") {
+            sourcePtr = std::unique_ptr<DataSource>(new VTMSource(16, 16, true, name, url));
         }
 
         if (sourcePtr) {
