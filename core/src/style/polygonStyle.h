@@ -32,6 +32,7 @@ protected:
     virtual void buildPoint(Point& _point, void* _styleParam, Properties& _props, VboMesh& _mesh) const override;
     virtual void buildLine(Line& _line, void* _styleParam, Properties& _props, VboMesh& _mesh) const override;
     virtual void buildPolygon(Polygon& _polygon, void* _styleParam, Properties& _props, VboMesh& _mesh) const override;
+    virtual void buildMesh(std::vector<uint32_t>& _indices, std::vector<Point>& _points, void* _styleParams, Properties& _props, VboMesh& _mesh) const override;
     virtual void* parseStyleParams(const std::string& _layerNameID, const StyleParamMap& _styleParamMap) override;
 
     typedef TypedMesh<PosNormColVertex> Mesh;
@@ -40,6 +41,10 @@ protected:
         return new Mesh(m_vertexLayout, m_drawMode);
     };
 
+    void addVertex(glm::vec3 p, glm::vec3 n, GLuint abgr, float layer,
+                   std::vector<int>& indices,
+                   std::vector<PosNormColVertex>& vertices) const;
+    
     std::unordered_map<std::string, StyleParams*> m_styleParamCache;
     std::mutex m_cacheMutex;
 

@@ -77,6 +77,8 @@ protected:
     /* Build styled vertex data for polygon geometry and add it to the given <VboMesh> */
     virtual void buildPolygon(Polygon& _polygon, void* _styleParam, Properties& _props, VboMesh& _mesh) const = 0;
 
+    virtual void buildMesh(std::vector<uint32_t>& _indices, std::vector<Point>& _points, void* _params, Properties& _props, VboMesh& _mesh) const {};
+
     /* Parse StyleParamMap to apt Style property parameters, and puts in the styleParamCache
      * NOTE: layerNameID will be replaced by unique ID for a set of filter matches*/
     virtual void* parseStyleParams(const std::string& _layerNameID, const StyleParamMap& _styleParamMap) = 0;

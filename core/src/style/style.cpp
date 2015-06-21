@@ -86,6 +86,10 @@ void Style::addData(TileData& _data, MapTile& _tile, const MapProjection& _mapPr
                         buildPolygon(polygon, parseStyleParams(it->first, it->second), feature.props, *mesh);
                     }
                     break;
+                case GeometryType::TRIANGLES:
+                    buildMesh(feature.indices, feature.points, parseStyleParams(it->first, it->second), feature.props, *mesh);
+                    break;
+
                 default:
                     break;
             }

@@ -135,3 +135,45 @@ void PolygonStyle::buildPolygon(Polygon& _polygon, void* _styleParam, Properties
     auto& mesh = static_cast<PolygonStyle::Mesh&>(_mesh);
     mesh.addVertices(std::move(vertices), std::move(indices));
 }
+
+
+void PolygonStyle::addVertex(glm::vec3 p, glm::vec3 n, GLuint abgr, float layer,
+                   std::vector<int>& indices,
+                   std::vector<PosNormColVertex>& vertices) const {
+  auto id = vertices.size();
+  vertices.push_back({ p, n, glm::vec2(0), abgr, layer });
+  indices.push_back(id);
+}
+
+void PolygonStyle::buildMesh(std::vector<uint32_t>& indices,
+                             std::vector<Point>& points,
+                             void* _styleParams,
+                             Properties& props,
+                             VboMesh& _mesh) const {
+    GLuint abgr = 0xffe6f0f2;
+    std::vector<PosNormColVertex> vertices;
+    GLfloat layer = 1;
+
+    std::vector<int> newIndices;
+    vertices.reserve(indices.size() * 3);
+
+    for (size_t i = 0; i < indices.size(); i += 3) {
+        auto p1 = points[indices[i + 0]];
+        auto p2 = points[indices[i + 1]];
+        auto p3 = points[indices[i + 2]];
+
+        auto a = p2 - p1;
+        auto b = p3 - p1;
+
+        auto c = glm::cross(a, b);
+        auto n = glm::normalize(glm::vec3(0,0,0.25)) - glm::normalize(c);
+        //auto n =  glm::normalize(c);
+
+        addVertex(p1, n, abgr, layer, newIndices, vertices);
+        addVertex(p3, n, abgr, layer, newIndices, vertices);
+        addVertex(p2, n, abgr, layer, newIndices, vertices);
+    }
+
+    auto& mesh = static_cast<PolygonStyle::Mesh&>(_mesh);
+    mesh.addVertices(std::move(vertices), std::move(newIndices));
+}
